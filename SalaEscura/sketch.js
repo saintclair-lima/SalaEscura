@@ -616,7 +616,7 @@ function setup(){
         case 'voltar':
           // voltar para navegação entre paineis
           controle.selecionarComando('navegarObjetos');
-          vCenario.getPainelFoco().getObjetoEmFoco().getSairExaminar();;
+          vCenario.getPainelFoco().getObjetoEmFoco().sairExaminar();;
           break;
       }
     } 
