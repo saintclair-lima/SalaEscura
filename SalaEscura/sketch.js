@@ -27,7 +27,7 @@ class Som {
       'torneira_pingo':'assets/audio/faucet_drip.mp3',
       'tv':'assets/audio/tv.mp3',
       
-      'Dialogo': 'DialogoFone.mp3',
+      'Dialogo': 'assets/audio/DialogoFone.mp3',
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
       
@@ -105,14 +105,16 @@ class Objeto {
     this.verboso = configs['verboso']
     
     if (configs['somCustomizado'] != '') this.som = new Som(configs['somCustomizado']);
-    else this.som = new Som(this.nome);
-    
+    else this.som = new Som(this.nome);    
     this.som.definirVerboso(this.verboso);
     this.somContinuo = configs['somContinuo']; // true|false: indica se é um item que emite som constante
-    this.itemExigido = configs['itemExigido']; // string: nome do item necessário para ficar resolvido
-    this.resolvido = configs['resolvido'];  // true|false: indica se o item tem algo pra ser feito
+    this.somFoco = configs['somFoco']; // som que toca ao entrar em foco (uma breve descrição pra ajudar a lembrar o que é)
+
     this.status = configs['status'];  // string: indica se o item está em alguma situação relevante
-    this.interacoes = {}; // lista com funções que representam os tipos de interação com o objeto
+
+    // lista de ações especiais a serem executadas quando houver interação
+    // modelado da sequinte forma: {'string_requisito_acao': ()=>{}}
+    this.comportamentosEspeciais = configs['comportamentosEspeciais'];
   }
   
   posicionarFrente(){ this.som.aFrente();}
@@ -128,33 +130,52 @@ class Objeto {
     if (forcarContinuo || this.somContinuo) this.som.tocarEmLoop();
     else this.som.tocar();
   }
-  
+
   entrarEmFoco(){
-    console.log(this.nome + ": Objeto.entrarEmFoco() executada. Precisa implementar")
+    console.log(this.nome + ": Objeto.entrarEmFoco() executada.");
+    if (!this.executarComportamentoEspecial()){
+      if (Object.keys(this.comportamentosEspeciais).length == 0) console.log(this.nome + ": Nenhum comportamento especial.");
+      else console.log(this.nome + ": Elemento necessário para comportamento especial ausente do inventário.");
+      this.somFoco.tocar();
+    }
   };
   
   sairDeFoco(){
-    console.log(this.nome + ": Objeto.sairDeFoco() executada. Precisa implementar")
+    console.log(this.nome + ": Objeto.sairDeFoco() executada.");
+    this.somFoco.parar();
   };
-  
-  entrarExaminar(){
-    console.log(this.nome + ": Objeto.entrarExaminar() executada. Precisa implementar")
-  };
-  
-  sairExaminar(){
-    console.log(this.nome + ": Objeto.sairExaminar() executada. Precisa implementar")
-  };
+
+  executarComportamentoEspecial(){
+    for (let item in this.comportamentosEspeciais){
+      if (inventario.getElementosDisponiveis().indexOf(item) > -1){
+        inventario.consumirElemento(item);
+        this.comportamentosEspeciais[item]();
+        delete this.comportamentosEspeciais[item];
+        if (Object.keys(this.comportamentosEspeciais).length == 0) this.resolvido = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  adicionarAcaoEspecial(acaoEspecial){
+    this.comportamentosEspeciais[acaoEspecial['nome']] = acaoEspecial['funcao']
+  }
   
   pararSom() {this.som.parar();}
   
   ajustarVolume(valor){this.som.ajustarVolume(valor);}
   
-  alterarSom(nomeSom){
-    this.som = new Som(nomeSom);
+  alterarSom(novoSom){
+    this.som = novoSom;
   }
   
   getListaNomesInteracoes(){
     return Object.keys(this.interacoes);
+  }
+
+  definirSomContinuo(tocarSomContinuo){
+    this.somContinuo = tocarSomContinuo;
   }
 
   adicionarInteracao(interacao){
@@ -184,7 +205,7 @@ class Painel {
     // a navegação, possibilitando parar o áudio que ainda estiver tocando
     this.idxSomInfoTocando = -1;
     // indica qual objeto do painel está em foco durante a interação
-    this.nomeObjetoEmFoco = Object.keys(this.objetos)[0];
+    this.nomeObjetoEmFoco = null; //Object.keys(this.objetos)[0];
     // Indica se está executando o áudio de descrição dos objetos
     // no painel. Permite controlar deforma a evitar dois áudios 
     // de informação executando ao mesmo tempo.
@@ -221,7 +242,13 @@ class Painel {
   }
   
   moverFocoParaObjeto(nomeObjeto){
-    if(this.getObjetoEmFoco().nome != nomeObjeto){
+    this.pararInfoPainel();
+    this.pararIntroPainel();
+    if(!this.nomeObjetoEmFoco){
+      // entra em foco no novo objeto
+      this.nomeObjetoEmFoco = nomeObjeto;
+      this.getObjetoEmFoco().entrarEmFoco();
+    } else if(this.getObjetoEmFoco().nome !== nomeObjeto){
       // sai de foco do objeto atual
       this.getObjetoEmFoco().sairDeFoco();
     
@@ -231,10 +258,6 @@ class Painel {
     } else {
       console.log('Foco já está no objeto escolhido ('+nomeObjeto+')');
     }
-  }
-  
-  examinarObjetoEmFoco(){
-    this.getObjetoEmFoco().entrarExaminar()
   }
   
   // Executada cada vez que o jogador escolhe examinar o painel
@@ -255,6 +278,7 @@ class Painel {
     this.pararIntroPainel();
     for (let nome in this.objetos) this.objetos[nome].ajustarVolume(0.5);
     this.tocandoInfo = false;
+    this.nomeObjetoEmFoco = null;
     if(this.verboso) console.log('Saiu do Painel ' + this.nome);
   }
   
@@ -412,12 +436,33 @@ class Controle {
   }
 }
 
+class Inventario {
+  constructor(itensIniciais){
+    if (itensIniciais) this.elementosDisponiveis = itensIniciais; // armazena como string todos os itens obtidos e acoes desbloqueadas
+    else this.elementosDisponiveis = [];
+  }
+
+  adicionarElemento(elemento){
+    this.elementosDisponiveis.push(elemento);
+  }
+
+  consumirElemento(elemento){
+    let idx = this.elementosDisponiveis.indexOf(elemento);
+    return this.elementosDisponiveis.splice(idx, 1);
+  }
+
+  getElementosDisponiveis(){
+    return this.elementosDisponiveis;
+  }
+}
+
 let verboso=true;
 let carregouCenario = false;
 let paineis;
 let tema;
 let vCenario;
 let controle;
+let inventario;
 let imgBotoes;
 
 function preload() {
@@ -425,89 +470,131 @@ function preload() {
   // em cada um dos objetos, após criar, precisa incluir as funções de 
   // interação, incluindo os sons a serem executados. Usa-se o método
   // adicionarInteracao, passando um objeto {'nomeDaInteracao': ()=> {açõesARealizar}}
+  let somFocoRelogio = new Som('foco_relogio');
   let relogio = new Objeto({
     'nome': 'relogio',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': true,
-    'itemExigido': '',
-    'resolvido': true,
+    'somFoco': somFocoRelogio,
     'status':'',
+    'comportamentosEspeciais': {},
   });
+  let somFocoPorta = new Som('foco_porta');
   let porta = new Objeto({
     'nome': 'porta',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': false,
-    'itemExigido': '',
-    'resolvido': false,
-    'status':'',
+    'somFoco': somFocoPorta,
+    'status':'fechada',
+    'comportamentosEspeciais': {
+      'telefoneNaoTocando': ()=>{
+        console.log('porta: percebeu que a porta está fechada. Telefone vai tocar em 5 segundos...');
+        inventario.adicionarElemento('telefoneTocando');
+        telefone.alterarSom(somTelefoneTocando);
+        telefone.posicionarDireita();
+        setTimeout(function() {
+          // aguarda 5 segundos e coloca o telefone pra tocar
+          telefone.tocarSom();
+        }, 5000);
+      },
+      'chavePorta': ()=>{
+        console.log('porta: usou a chave para abrir. Tocar áudio de sucesso e encerrar fase.');
+        porta.status = 'aberta';
+      }
+    },
   });
   
+  let somFocoLampada = new Som('foco_lampada');
   let lampada = new Objeto({
     'nome': 'lampada',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': true,
-    'itemExigido': '',
-    'resolvido': true,
+    'somFoco': somFocoLampada,
     'status':'',
+    'comportamentosEspeciais': {}
   });
+  let somFocoQuadro = new Som('foco_quadro');
   let quadro = new Objeto({
     'nome': 'quadro',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': false,
-    'itemExigido': '',
-    'resolvido': false,
+    'somFoco': somFocoQuadro,
     'status':'',
+    'comportamentosEspeciais': {'dicaQuadro': ()=>{
+      console.log('quadro: encontrada uma chave. Tocar áudio descrevendo');
+      inventario.adicionarElemento('chavePorta');
+    }}
   });
+  let somFocoPrateleira = new Som('foco_prateleira');
   let prateleira = new Objeto({
     'nome': 'prateleira',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': false,
-    'itemExigido': '',
-    'resolvido': false,
+    'somFoco': somFocoPrateleira,
     'status':'',
+    'comportamentosEspeciais': {'naoMachucado': ()=>{
+      console.log('prateleira: machucou o dedo. Tocar áudio descrevendo');
+      inventario.adicionarElemento('dedoMachucado');
+    }}
   });
-   
+  
+  let somFocoEstante = new Som('foco_estante');
   let estante = new Objeto({
     'nome': 'estante',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': true,
-    'itemExigido': '',
-    'resolvido': true,
+    'somFoco': somFocoEstante,
     'status':'',
-  }); 
+    'comportamentosEspeciais': {'dedoMachucado': ()=>{
+      console.log('estante: manchou livro com sangue. Ver se vale a pena colocar alguma coisa aqui');
+      inventario.adicionarElemento('livroManchadoComSangue');
+    }}
+  });
+  let somFocoBrasao = new Som('foco_brasao');
   let brasao = new Objeto({
     'nome': 'brasao',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': false,
-    'itemExigido': '',
-    'resolvido': true,
+    'somFoco': somFocoBrasao,
     'status':'',
+    'comportamentosEspeciais': {}
   });
   
+  let dialogoTelefone = new Som('Dialogo');
+  let somTelefoneTocando = new Som('telefone');
+  let somFocoTelefone = new Som('foco_telefone');
   let telefone  = new Objeto({
     'nome': 'telefone',
     'verboso': verboso,
-    'somCustomizado': 'telefone_pulso',
+    'somCustomizado': 'silencio',
     'somContinuo': true,
-    'itemExigido': '',
-    'resolvido': false,
+    'somFoco': somFocoTelefone,
     'status':'',
+    'comportamentosEspeciais': {'telefoneTocando': ()=>{
+      console.log('telefone: recebe dica da chave no quadro. Gravar áudio explicando');
+      telefone.pararSom();
+      telefone.alterarSom(dialogoTelefone);
+      telefone.definirSomContinuo(false);
+      telefone.tocarSom();
+      inventario.adicionarElemento('dicaQuadro');
+    }}
   });
+  let somFocoPoltrona = new Som('foco_poltrona');
   let poltrona  = new Objeto({
     'nome': 'poltrona',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': false,
-    'itemExigido': '',
-    'resolvido': true,
+    'somFoco': somFocoPoltrona,
     'status':'',
+    'comportamentosEspeciais': {}
   });
   
   let painel1 = new Painel({
@@ -531,7 +618,7 @@ function preload() {
   let painel3 = new Painel({
     'nome': 'telaLampada',
     'verboso': verboso,
-    'objetos': [lampada, quadro],
+    'objetos': [lampada, quadro, prateleira],
     'somPainel': '',
     'somIntro': 'PainelLampadaIntro',
     'sonsInfo': ['p_lamp.1','p_lamp.2','p_lamp.3'],
@@ -555,7 +642,8 @@ function setup(){
   vCenario = new VisaoCenario(paineis, tema);
   // criando o controle e definindo comandos iniciais
   controle = new Controle({});
-  
+  inventario = new Inventario(['naoMachucado', 'telefoneNaoTocando']);
+
   comandos = {
     'navegarPaineis': (opcao) => {
       switch (opcao) {
@@ -579,12 +667,7 @@ function setup(){
       }
     },
     'navegarObjetos': (opcao) => {
-      if (opcao == 'examinar'){
-        // examinar objeto em foco
-        // implementar
-        console.log('Escolheu examinar ', vCenario.getPainelFoco().getObjetoEmFoco().nome, '. Falta Implementar');
-        controle.selecionarComando('navegarInteracoes');
-      } else if (opcao == 'voltar'){
+      if (opcao == 'voltar'){
         // voltar para navegação entre paineis
         console.log('Escolheu voltar para navegação entre paineis')
         controle.selecionarComando('navegarPaineis');
@@ -616,7 +699,7 @@ function setup(){
         case 'voltar':
           // voltar para navegação entre paineis
           controle.selecionarComando('navegarObjetos');
-          vCenario.getPainelFoco().getObjetoEmFoco().sairExaminar();
+          vCenario.getPainelFoco().getObjetoEmFoco().sairExaminar();;
           break;
       }
     } 
