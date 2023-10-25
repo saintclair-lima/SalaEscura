@@ -72,8 +72,8 @@ class Som {
     }
   }
   
-  ajustarVolume(valor){
-    this.arqSom.setVolume(valor);
+  ajustarVolume(valor, tempoDeFade){
+    this.arqSom.setVolume(valor, tempoDeFade);
   }
   
   definirVerboso(valorBooleano){
@@ -374,7 +374,7 @@ class VisaoCenario {
     this.audioIniciado = true;
     for (let painel of this.paineis) painel.iniciarSons();
     // valores maiores que 0.02 para o som de fundo fica alto demais
-    this.tema.ajustarVolume(0.02);
+    this.tema.ajustarVolume(0.2);
     this.tema.tocarEmLoop();  
   }
 
@@ -555,8 +555,8 @@ function criarFase1(){
           // aguarda 5 segundos e coloca o telefone pra tocar
           inventario.adicionarElemento('telefoneTocando');
           vCenario.tema.parar();
-          somTemaTelefone.ajustarVolume(0.2);
-          somTemaTelefone.tocarEmLoop();
+          vCenario.tema = somTemaTelefone;
+          vCenario.tema.tocarEmLoop();
           telefone.tocarSom();
         }, 5000);
       },
@@ -637,6 +637,7 @@ function criarFase1(){
   let dialogoTelefone = new Som('Dialogo');
   let somTelefoneTocando = new Som('telefone');
   let somFocoTelefone = new Som('foco_telefone');
+  let temaBirthDayFone = new Som('tema_birthday');
   let telefone  = new Objeto({
     'nome': 'telefone',
     'verboso': verboso,
@@ -647,12 +648,19 @@ function criarFase1(){
     'comportamentosEspeciais': {'telefoneTocando': ()=>{
       console.log('telefone: recebe dica da chave no quadro. Gravar áudio explicando');
       telefone.pararSom();
-      somTemaTelefone.parar();
-      vCenario.tema.tocar();
       telefone.alterarSom(dialogoTelefone);
       telefone.definirSomContinuo(false);
       telefone.tocarSom();
-      inventario.adicionarElemento('dicaQuadro');
+      setTimeout(function (){
+        vCenario.tema.ajustarVolume(0, 4);
+        setTimeout(function () {
+          vCenario.tema.parar();
+          vCenario.tema = temaBirthDayFone;
+          vCenario.tema.ajustarVolume(0.2);
+          vCenario.tema.tocar();
+          inventario.adicionarElemento('dicaQuadro');
+        }, 4000);
+      }, 33000);
     }}
   });
   let somFocoPoltrona = new Som('foco_poltrona');
@@ -712,6 +720,7 @@ function criarFase1(){
     new Inventario(['naoMachucado', 'telefoneNaoTocando']),
     false,
     () => {
+      fases.fase1.audioIntro.ajustarVolume(0.5);
       fases.fase1.audioIntro.tocar();
       somPrologo.tocar();
       setTimeout(function(){
