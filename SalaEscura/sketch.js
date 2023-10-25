@@ -1,5 +1,5 @@
 class Som {
-  constructor(tipo){
+  constructor(tipo, urlAvulsa){
     // determina se vai ou não logar informações ao executar o som
     this.verboso = false;
     // o tipo de som determina qual arquivo de áudio vai ser tocado.
@@ -30,11 +30,16 @@ class Som {
       'Dialogo': 'assets/audio/DialogoFone.mp3',
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
+      'tema_telefone': 'assets/audio/_theme/theme_get_out_of_here.mp3',
       
       'PainelRelogioIntro': 'assets/audio/_paineis/PainelRelogioIntro.mp3',
       'PainelTelefoneIntro': 'assets/audio/_paineis/PainelTelefoneIntro.mp3',
       'PainelEstanteIntro': 'assets/audio/_paineis/PainelEstanteIntro.mp3',
       'PainelLampadaIntro': 'assets/audio/_paineis/PainelLampadaIntro.mp3',
+      
+      'Fase1Prologo': 'assets/audio/_fases/Fase1Prologo.mp3',
+      'Fase1Epilogo': 'assets/audio/_fases/Fase1Epilogo.mp3',
+      'Fase1ChaveNoQuadro': 'assets/audio/_fases/Fase1ChaveNoQuadro.mp3',
       
       'p_est.1': 'assets/audio/_paineis/p_est.1.mp3',
       'p_est.2': 'assets/audio/_paineis/p_est.2.mp3',
@@ -49,8 +54,10 @@ class Som {
       'p_telef.2': 'assets/audio/_paineis/p_telef.2.mp3',
       'p_telef.3': 'assets/audio/_paineis/p_telef.3.mp3',
     }  
-    if (this.sonsDic[tipo] == undefined) this.arqSom = loadSound(this.sonsDic['silencio']); 
-    else  this.arqSom = loadSound(this.sonsDic[tipo]);  
+    
+    if (urlAvulsa) this.arqSom = loadSound(tipo);
+    else if (this.sonsDic[tipo] == undefined) this.arqSom = loadSound(this.sonsDic['silencio']);
+    else this.arqSom = loadSound(this.sonsDic[tipo]);  
   }
   
   tocar(){
@@ -158,7 +165,7 @@ class Objeto {
     return false;
   }
 
-  adicionarAcaoEspecial(acaoEspecial){
+  adicionarComportamentoEspecial(acaoEspecial){
     this.comportamentosEspeciais[acaoEspecial['nome']] = acaoEspecial['funcao']
   }
   
@@ -176,10 +183,6 @@ class Objeto {
 
   definirSomContinuo(tocarSomContinuo){
     this.somContinuo = tocarSomContinuo;
-  }
-
-  adicionarInteracao(interacao){
-    this.interacoes[interacao['nome']] = interacao['funcao'];
   }
 }
 
@@ -298,6 +301,10 @@ class Painel {
   iniciarSons(){
     for (let nome in this.objetos) this.objetos[nome].tocarSom();
   }
+
+  pararSons(){
+    for (let nome in this.objetos) this.objetos[nome].pararSom();
+  }
   
   posicionarFrente(){
     for (let nome in this.objetos) this.objetos[nome].posicionarFrente();
@@ -365,13 +372,14 @@ class VisaoCenario {
   
   iniciarAudio(){
     this.audioIniciado = true;
-    this.paineis[0].iniciarSons();
-    this.paineis[1].iniciarSons();
-    this.paineis[2].iniciarSons();
-    this.paineis[3].iniciarSons();
+    for (let painel of this.paineis) painel.iniciarSons();
     // valores maiores que 0.02 para o som de fundo fica alto demais
-    tema.ajustarVolume(0.02);
-    tema.tocarEmLoop();  
+    this.tema.ajustarVolume(0.02);
+    this.tema.tocarEmLoop();  
+  }
+
+  pararAudio(){
+    for (let painel of this.paineis) painel.pararSons();
   }
   
   virarDireita(){
@@ -409,10 +417,63 @@ class VisaoCenario {
   } 
 }
 
+class Fase {
+  constructor (nome, paineis, audioIntro, audioTema, inventario, concluida, funcaoExecutarAoIniciar){
+    this.nome = nome;
+    this.paineis = paineis;
+    this.audioIntro = audioIntro;
+    this.tema = audioTema;
+    this.inventario = inventario;
+    this.concluida = concluida;
+    this.executarAoIniciar = funcaoExecutarAoIniciar;
+  }
+}
+
 class Controle {
   constructor(comandos){
-    this.comandos = comandos;
-    this.comandoSelecionado = Object.keys(comandos)[0];
+    if (comandos){
+      this.comandos = comandos;
+    } else {
+      this.comandos = {
+        'navegarPaineis': (opcao) => {
+          switch (opcao) {
+            case 'direita':
+              // dar foco ao painel à direita
+              vCenario.virarDireita();
+              break;
+            case 'esquerda':
+              // dar foco ao painel à esquerda
+              vCenario.virarEsquerda();
+              break;
+            case 'examinar':
+              // examinar painel em foco
+              // alterar próximo comando do controle para navegar objetos do painel
+              controle.selecionarComando('navegarObjetos');
+              vCenario.entrarPainelEmFoco();
+              break;
+            case 'sair':
+              // definir o que fazer
+              break;
+          }
+        },
+        'navegarObjetos': (opcao) => {
+          if (opcao == 'voltar'){
+            // voltar para navegação entre paineis
+            console.log('Escolheu voltar para navegação entre paineis')
+            controle.selecionarComando('navegarPaineis');
+            vCenario.sairPainelEmFoco();
+          } else {
+            for (let nomeObjeto of vCenario.getPainelFoco().getListaNomesObjetos()){
+              if (opcao == nomeObjeto){
+                vCenario.getPainelFoco().moverFocoParaObjeto(nomeObjeto);
+                break;
+              }          
+            }
+          }   
+        },
+      }
+    }
+    this.comandoSelecionado = 'navegarPaineis';
   }
   
   executarComando(nomeComando, parametros) {
@@ -429,6 +490,7 @@ class Controle {
   
   definirConjuntoDeComandos(comandos){
     this.comandos = comandos;
+    this.comandoSelecionado = Object.keys(comandos)[0];
   }
   
   selecionarComando(nomeComando){
@@ -456,20 +518,14 @@ class Inventario {
   }
 }
 
-let verboso=true;
-let carregouCenario = false;
-let paineis;
-let tema;
-let vCenario;
-let controle;
-let inventario;
-let imgBotoes;
+function criarFase1(){
+  // em cada um dos objetos, após criar, precisa incluir os sons a serem executados
+  // quando o objeto entra em foco e os comportamentos especiais dos que tiverem. Usa-se o método
+  // adicionarComportamentoEspecial, passando um objeto no seguinte formato: 
+  //      {'nomeDoItemNecessarioParaExecutar': ()=> {açõesARealizar()},
+  //        'nomeDaCondiçãoNecessariaParaExecutar: ()=> {açõesARealizar()}}
 
-function preload() {
-  imgBotoes = loadImage('./assets/imgs/botoes.jpg');
-  // em cada um dos objetos, após criar, precisa incluir as funções de 
-  // interação, incluindo os sons a serem executados. Usa-se o método
-  // adicionarInteracao, passando um objeto {'nomeDaInteracao': ()=> {açõesARealizar}}
+  // ITEMS DA FASE 1
   let somFocoRelogio = new Som('foco_relogio');
   let relogio = new Objeto({
     'nome': 'relogio',
@@ -480,6 +536,8 @@ function preload() {
     'status':'',
     'comportamentosEspeciais': {},
   });
+  let somTemaTelefone = new Som('tema_telefone');
+  let somEpilogo = new Som('Fase1Epilogo');
   let somFocoPorta = new Som('foco_porta');
   let porta = new Objeto({
     'nome': 'porta',
@@ -491,17 +549,24 @@ function preload() {
     'comportamentosEspeciais': {
       'telefoneNaoTocando': ()=>{
         console.log('porta: percebeu que a porta está fechada. Telefone vai tocar em 5 segundos...');
-        inventario.adicionarElemento('telefoneTocando');
         telefone.alterarSom(somTelefoneTocando);
         telefone.posicionarDireita();
         setTimeout(function() {
           // aguarda 5 segundos e coloca o telefone pra tocar
+          inventario.adicionarElemento('telefoneTocando');
+          vCenario.tema.parar();
+          somTemaTelefone.ajustarVolume(0.2);
+          somTemaTelefone.tocarEmLoop();
           telefone.tocarSom();
         }, 5000);
       },
       'chavePorta': ()=>{
         console.log('porta: usou a chave para abrir. Tocar áudio de sucesso e encerrar fase.');
         porta.status = 'aberta';
+        fases['fase1']['concluida'] = true;
+        vCenario.pararAudio();
+        somEpilogo.tocar();
+        fases.fase1.audioIntro.tocar();
       }
     },
   });
@@ -516,6 +581,7 @@ function preload() {
     'status':'',
     'comportamentosEspeciais': {}
   });
+  let somChaveNoQuadro = new Som('Fase1ChaveNoQuadro');
   let somFocoQuadro = new Som('foco_quadro');
   let quadro = new Objeto({
     'nome': 'quadro',
@@ -526,6 +592,7 @@ function preload() {
     'status':'',
     'comportamentosEspeciais': {'dicaQuadro': ()=>{
       console.log('quadro: encontrada uma chave. Tocar áudio descrevendo');
+      somChaveNoQuadro.tocar();
       inventario.adicionarElemento('chavePorta');
     }}
   });
@@ -580,6 +647,8 @@ function preload() {
     'comportamentosEspeciais': {'telefoneTocando': ()=>{
       console.log('telefone: recebe dica da chave no quadro. Gravar áudio explicando');
       telefone.pararSom();
+      somTemaTelefone.parar();
+      vCenario.tema.tocar();
       telefone.alterarSom(dialogoTelefone);
       telefone.definirSomContinuo(false);
       telefone.tocarSom();
@@ -634,80 +703,53 @@ function preload() {
     'urlImagem': 'assets/imgs/books.jpg',
   });
   
-  paineis = [painel1, painel2, painel3, painel4]
-  tema = new Som('tema_birthday');
+  let somPrologo = new Som('Fase1Prologo');
+  let fase1 = new Fase(
+    'fase1',
+    [painel1, painel2, painel3, painel4],
+    new Som('tema_main'),
+    new Som('tema_birthday'),
+    new Inventario(['naoMachucado', 'telefoneNaoTocando']),
+    false,
+    () => {
+      fases.fase1.audioIntro.tocar();
+      somPrologo.tocar();
+      setTimeout(function(){
+        fases.fase1.audioIntro.parar();
+        vCenario = new VisaoCenario(fases.fase1.paineis, fases.fase1.tema);
+        inventario = fases.fase1.inventario;
+      }, 30000);
+    },
+  );
+
+  return fase1;
+}
+
+function criarFases() {
+  let fase1 = criarFase1();
+  fases['fase1'] = fase1;
+}
+
+let verboso=true;
+let carregouCenario = false;
+let paineis;
+let tema;
+let vCenario;
+let controle;
+let inventario;
+let fases = {};
+let faseAtual = 'fase1'
+
+let imgBotoes;
+
+function preload() {
+  imgBotoes = loadImage('./assets/imgs/botoes.jpg');
+  criarFases();
 }
 
 function setup(){
-  vCenario = new VisaoCenario(paineis, tema);
-  // criando o controle e definindo comandos iniciais
-  controle = new Controle({});
-  inventario = new Inventario(['naoMachucado', 'telefoneNaoTocando']);
-
-  comandos = {
-    'navegarPaineis': (opcao) => {
-      switch (opcao) {
-        case 'direita':
-          // dar foco ao painel à direita
-          vCenario.virarDireita();
-          break;
-        case 'esquerda':
-          // dar foco ao painel à esquerda
-          vCenario.virarEsquerda();
-          break;
-        case 'examinar':
-          // examinar painel em foco
-          // alterar próximo comando do controle para navegar objetos do painel
-          controle.selecionarComando('navegarObjetos');
-          vCenario.entrarPainelEmFoco();
-          break;
-        case 'sair':
-          // definir o que fazer
-          break;
-      }
-    },
-    'navegarObjetos': (opcao) => {
-      if (opcao == 'voltar'){
-        // voltar para navegação entre paineis
-        console.log('Escolheu voltar para navegação entre paineis')
-        controle.selecionarComando('navegarPaineis');
-        vCenario.sairPainelEmFoco();
-      } else {
-        for (let nomeObjeto of vCenario.getPainelFoco().getListaNomesObjetos()){
-          if (opcao == nomeObjeto){
-            vCenario.getPainelFoco().moverFocoParaObjeto(nomeObjeto);
-            break;
-          }          
-        }
-      }   
-    },
-    'navegarInteracoes': (opcao) => {
-      switch (opcao) {
-        case 'acao1':
-          // dar foco à acao1
-          // implementar
-          break;
-        case 'acao2':
-          // dar foco à acao2
-          // implementar
-          break;
-        case 'escolherAcao':
-          // escolher acao em foco
-          // implementar
-          controle.selecionarComando('navegarObjetos');
-          break;
-        case 'voltar':
-          // voltar para navegação entre paineis
-          controle.selecionarComando('navegarObjetos');
-          vCenario.getPainelFoco().getObjetoEmFoco().sairExaminar();;
-          break;
-      }
-    } 
-  }
-  
-  controle.definirConjuntoDeComandos(comandos);
-  controle.selecionarComando('navegarPaineis');
-  
+  fases[faseAtual].executarAoIniciar();
+  controle = new Controle();  
 }
 
 function carregarVisaoCenario(){
@@ -752,15 +794,8 @@ let mapaComandosNavegarPaineis = {
   52: 'sair'
 }
 let mapaComandosNavegarObjetos = {
-  49: '',
-  50: '',
-  51: 'examinar',
-  52: 'voltar'
-}
-let mapaComandosNavegarInteracoes = {
-  49: 'acao1',
-  50: 'acao2',
-  51: 'ecolherAcao',
+  49: 'objeto1',
+  50: 'objeto2',
   52: 'voltar'
 }
 
@@ -770,8 +805,6 @@ function keyCodeParaComando(codigo){
       return mapaComandosNavegarPaineis[codigo];
     case 'navegarObjetos':
       return keyCodeParaObjeto(codigo, vCenario.getPainelFoco());
-    case 'navegarInteracoes':
-      return keyCodeParaInteracao(codigo, vCenario.getPainelFoco().getObjetoEmFoco());
   }
 }
 
@@ -781,21 +814,6 @@ function keyCodeParaObjeto(codigo, painel){
       return painel.getListaNomesObjetos()[0];
     case 50:
       return painel.getListaNomesObjetos()[1];
-    case 51:
-      return 'examinar';
-    case 52:
-      return 'voltar';
-  }
-}
-
-function keyCodeParaInteracao(codigo, objeto){
-  switch (codigo) {
-    case 49:
-      return objeto.getListaNomesInteracoes()[0];
-    case 50:
-      return objeto.getListaNomesInteracoes()[1];
-    case 51:
-      return 'escolherAcao';
     case 52:
       return 'voltar';
   }
