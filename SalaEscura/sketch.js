@@ -72,7 +72,20 @@ class Som {
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
       'tema_telefone': 'assets/audio/_theme/theme_get_out_of_here.mp3',
+      
       'tutorialEpilogo': 'assets/audio/tutorial/Epilogo.mp3',
+      'PainelChaveDescricao': 'assets/audio/tutorial/PainelChaveDescricao.mp3',
+      'PainelChaveDescricaoCurta_1': 'assets/audio/tutorial/PainelChaveDescricaoCurta_1.mp3',
+      'PainelChaveDescricaoCurta_2': 'assets/audio/tutorial/PainelChaveDescricaoCurta_2.mp3',
+      'PainelJanelaDescricao': 'assets/audio/tutorial/PainelJanelaDescricao.mp3',
+      'PainelJanelaDescricaoCurta_1': 'assets/audio/tutorial/PainelJanelaDescricaoCurta_1.mp3',
+      'PainelJanelaDescricaoCurta_2': 'assets/audio/tutorial/PainelJanelaDescricaoCurta_2.mp3',
+      'PainelPortaDescricao': 'assets/audio/tutorial/PainelPortaDescricao.mp3',
+      'PainelPortaDescricaoCurta_1': 'assets/audio/tutorial/PainelPortaDescricaoCurta_1.mp3',
+      'PainelPortaDescricaoCurta_2': 'assets/audio/tutorial/PainelPortaDescricaoCurta_2.mp3',
+      'PainelTVDescricao': 'assets/audio/tutorial/PainelTVDescricao.mp3',
+      'PainelTvDescricaoCurta_1': 'assets/audio/tutorial/PainelTvDescricaoCurta_1.mp3',
+      'PainelTvDescricaoCurta_2': 'assets/audio/tutorial/PainelTvDescricaoCurta_2.mp3',
     }   
     
     if (urlAvulsa) this.arqSom = loadSound(tipo);
@@ -584,8 +597,8 @@ let painel1Tutorial = new Painel({
   'verboso': verboso,
   'objetos': [tvTutorial],
   'somPainel': '',
-  'somIntro': 'PainelRelogioDescricao',
-  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'somIntro': 'PainelTVDescricao',
+  'sonsInfo': ['PainelTvDescricaoCurta_1', 'PainelTvDescricaoCurta_2'],
   'urlImagem': 'assets/imgs/TvTutorial.jpg',
 });
 let painel2Tutorial = new Painel({
@@ -593,8 +606,8 @@ let painel2Tutorial = new Painel({
   'verboso': verboso,
   'objetos': [tvTutorial],
   'somPainel': '',
-  'somIntro': 'PainelRelogioDescricao',
-  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'somIntro': 'PainelChaveDescricao',
+  'sonsInfo': ['PainelChaveDescricaoCurta_1', 'PainelChaveDescricaoCurta_2'],
   'urlImagem': 'assets/imgs/keyTutorial.jpg',
 });
 let painel3Tutorial = new Painel({
@@ -602,8 +615,8 @@ let painel3Tutorial = new Painel({
   'verboso': verboso,
   'objetos': [tvTutorial],
   'somPainel': '',
-  'somIntro': 'PainelRelogioDescricao',
-  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'somIntro': 'PainelJanelaDescricao',
+  'sonsInfo': ['PainelJanelaDescricaoCurta_1', 'PainelJanelaDescricaoCurta_2'],
   'urlImagem': 'assets/imgs/windowTutorial.jpg',
 });
 let painel4Tutorial = new Painel({
@@ -611,8 +624,8 @@ let painel4Tutorial = new Painel({
   'verboso': verboso,
   'objetos': [tvTutorial],
   'somPainel': '',
-  'somIntro': 'PainelRelogioDescricao',
-  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'somIntro': 'PainelPortaDescricao',
+  'sonsInfo': ['PainelPortaDescricaoCurta_1', 'PainelPortaDescricaoCurta_2'],
   'urlImagem': 'assets/imgs/doorTutorial.jpg',
 });
 let somPrologo = new Som('tutorialEpilogo');
