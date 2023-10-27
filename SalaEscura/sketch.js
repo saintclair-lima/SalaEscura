@@ -69,33 +69,9 @@ class Som {
       'Prologo': './assets/audio/Fase1/Prologo.mp3',
       'SalaDescricaoCurta': './assets/audio/Fase1/SalaDescricaoCurta.mp3',
       'SalaDescricao': './assets/audio/Fase1/SalaDescricao.mp3',
-      
-      'Dialogo': 'assets/audio/DialogoFone.mp3',
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
       'tema_telefone': 'assets/audio/_theme/theme_get_out_of_here.mp3',
-      
-      'PainelRelogioIntro': 'assets/audio/_paineis/PainelRelogioIntro.mp3',
-      'PainelTelefoneIntro': 'assets/audio/_paineis/PainelTelefoneIntro.mp3',
-      'PainelEstanteIntro': 'assets/audio/_paineis/PainelEstanteIntro.mp3',
-      'PainelLampadaIntro': 'assets/audio/_paineis/PainelLampadaIntro.mp3',
-      
-      'Fase1Prologo': 'assets/audio/_fases/Fase1Prologo.mp3',
-      'Fase1Epilogo': 'assets/audio/_fases/Fase1Epilogo.mp3',
-      'Fase1ChaveNoQuadro': 'assets/audio/_fases/Fase1ChaveNoQuadro.mp3',
-      
-      'p_est.1': 'assets/audio/_paineis/p_est.1.mp3',
-      'p_est.2': 'assets/audio/_paineis/p_est.2.mp3',
-      'p_est.3': 'assets/audio/_paineis/p_est.3.mp3',
-      'p_lamp.1': 'assets/audio/_paineis/p_lamp.1.mp3',
-      'p_lamp.2': 'assets/audio/_paineis/p_lamp.2.mp3',
-      'p_lamp.3': 'assets/audio/_paineis/p_lamp.3.mp3',
-      'p_reloj.1': 'assets/audio/_paineis/p_reloj.1.mp3',
-      'p_reloj.2': 'assets/audio/_paineis/p_reloj.2.mp3',
-      'p_reloj.3': 'assets/audio/_paineis/p_reloj.3.mp3',
-      'p_telef.1': 'assets/audio/_paineis/p_telef.1.mp3',
-      'p_telef.2': 'assets/audio/_paineis/p_telef.2.mp3',
-      'p_telef.3': 'assets/audio/_paineis/p_telef.3.mp3',
     }   
     
     if (urlAvulsa) this.arqSom = loadSound(tipo);
@@ -214,7 +190,7 @@ class Objeto {
   };
   
   sairDeFoco(){
-    console.log(this.nome + ": Objeto.sairDeFoco() executada.");
+    if (this.verboso) console.log(this.nome + ": Objeto.sairDeFoco() executada.");
     this.pararSomFoco();
   };
 
@@ -327,7 +303,7 @@ class Painel {
       this.nomeObjetoEmFoco = nomeObjeto;
       this.getObjetoEmFoco().entrarEmFoco();
     } else {
-      console.log('Foco já está no objeto escolhido ('+nomeObjeto+')');
+      if (this.verboso) console.log('Foco já está no objeto escolhido ('+nomeObjeto+')');
     }
   }
   
@@ -359,7 +335,6 @@ class Painel {
   }
   
   getObjetoEmFoco(){
-    // REMOVER LOG
     return this.objetos[this.nomeObjetoEmFoco]
   }
   
@@ -528,7 +503,7 @@ class Controle {
         'navegarObjetos': (opcao) => {
           if (opcao == 'voltar'){
             // voltar para navegação entre paineis
-            console.log('Escolheu voltar para navegação entre paineis')
+            if (this.verboso) console.log('Escolheu voltar para navegação entre paineis')
             controle.selecionarComando('navegarPaineis');
             vCenario.sairPainelEmFoco();
           } else {
@@ -647,7 +622,7 @@ function criarFase1(){
         return false;
       },
       'chavePorta': ()=>{
-        console.log('porta: usou a chave para abrir. Tocar áudio de sucesso e encerrar fase.');
+        if (this.verboso) console.log('porta: usou a chave para abrir. Tocar epílogo de sucesso e encerrar fase.');
         porta.status = 'aberta';
         fases['fase1']['concluida'] = true;
         vCenario.pararAudio();
@@ -688,7 +663,7 @@ function criarFase1(){
     'status':'',
     'comportamentosEspeciais': {
       'dicaQuadro': ()=>{
-        console.log('quadro: encontrada uma chave. Tocar áudio descrevendo');
+        if (this.verboso) console.log('quadro: encontrada uma chave.');
         somChaveNoQuadro.tocar();
         inventario.adicionarElemento('chavePorta');
         return true
@@ -724,7 +699,7 @@ function criarFase1(){
     'somFoco': somFocoPrateleira,
     'status':'',
     'comportamentosEspeciais': {'naoMachucado': ()=>{
-      console.log('prateleira: machucou o dedo. Tocar áudio descrevendo');
+      if (this.verboso) console.log('prateleira: machucou o dedo. Falta gravar áudio descrevendo');
       inventario.adicionarElemento('dedoMachucado');
       return true;
     }}
@@ -744,7 +719,7 @@ function criarFase1(){
     'sonsFoco': sonsFocoEstante,
     'status':'',
     'comportamentosEspeciais': {'dedoMachucado': ()=>{
-      console.log('estante: manchou livro com sangue. Ver se vale a pena colocar alguma coisa aqui');
+      if (this.verboso) console.log('estante: manchou livro com sangue. Ver se vale a pena colocar alguma coisa aqui');
       inventario.adicionarElemento('livroManchadoComSangue');
       return true;
     }}
@@ -782,7 +757,7 @@ function criarFase1(){
     'sonsFoco': sonsFocoTelefone,
     'status':'',
     'comportamentosEspeciais': {'telefoneTocando': ()=>{
-      console.log('telefone: recebe dica da chave no quadro. Gravar áudio explicando');
+      if (this.verboso) console.log('telefone: Recebida a dica da chave no quadro.');
       telefone.pararSom();
       telefone.alterarSom(dialogoTelefone);
       telefone.definirSomContinuo(false);
@@ -850,7 +825,6 @@ function criarFase1(){
     'somPainel': '',
     'somIntro': 'PainelEstanteDescricao',
     'sonsInfo': ['PainelEstanteDescricaoCurta_1', 'PainelEstanteDescricaoCurta_2'],
-    'sonsInfo': ['p_est.1','p_est.2','p_est.3'],
     'urlImagem': 'assets/imgs/books.jpg',
   });
   
@@ -864,15 +838,15 @@ function criarFase1(){
     new Inventario(['naoMachucado', 'telefoneNaoTocando']),
     false,
     () => {
-      //fases.fase1.audioIntro.ajustarVolume(0.5);
-      //fases.fase1.audioIntro.tocar();
-      //somPrologo.tocar();
+      fases.fase1.audioIntro.ajustarVolume(0.5);
+      fases.fase1.audioIntro.tocar();
+      somPrologo.tocar();
       setTimeout(function(){
         fases.fase1.audioIntro.parar();
-        //somIntroSala.tocar();
+        somIntroSala.tocar();
         vCenario = new VisaoCenario(fases.fase1.paineis, fases.fase1.tema);
         inventario = fases.fase1.inventario;
-      }, 1);//54000);
+      }, 54000);
     },
   );
 
@@ -940,7 +914,7 @@ function canvasPressed(){
 }
 
 // Temporário. Adaptar para receber comandos de voz
-// 37, 39, 38 e 40 são os keyCode para as teclas 1, 2, 3 e 4 do teclado, respectivamente
+// 37, 39, 38 e 40 são os keyCode para as teclas de seta no teclado
 let mapaComandosNavegarPaineis = {
   37: 'esquerda',
   39: 'direita',
@@ -978,9 +952,11 @@ function keyPressed() {
   if (comando != undefined) {
     controle.executarComandoSelecionado(comando);
   }
+  
+  // comandos abaixo usados para debugar
   if (keyCode == 80) {
     // quando pression "P"
-    console.log(inventario)
+    
   }
   
   if (keyCode == 76) {
