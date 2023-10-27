@@ -72,6 +72,7 @@ class Som {
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
       'tema_telefone': 'assets/audio/_theme/theme_get_out_of_here.mp3',
+      'tutorialEpilogo': 'assets/audio/tutorial/Epilogo.mp3',
     }   
     
     if (urlAvulsa) this.arqSom = loadSound(tipo);
@@ -561,7 +562,82 @@ class Inventario {
     return this.elementosDisponiveis;
   }
 }
+function criarFaseTutorial(){
+// ITENS DA FASE TUTORIAL
+let somIntroTv= new Som('ObjetoRelogioComodaDescricao');
+let sonsFocoTv = [
+  new Som('ObjetoRelogioComodaDescricaoCurta_1'),
+  new Som('ObjetoRelogioComodaDescricaoCurta_2'),
+];
+let tvTutorial = new Objeto({
+  'nome': 'tv',
+  'verboso': verboso,
+  'somCustomizado': '',
+  'somContinuo': true,
+  'somIntro': somIntroTv,
+  'sonsFoco': sonsFocoTv,
+  'status':'',
+  'comportamentosEspeciais': {},
+});
+let painel1Tutorial = new Painel({
+  'nome': 'telaTv',
+  'verboso': verboso,
+  'objetos': [tvTutorial],
+  'somPainel': '',
+  'somIntro': 'PainelRelogioDescricao',
+  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'urlImagem': 'assets/imgs/TvTutorial.jpg',
+});
+let painel2Tutorial = new Painel({
+  'nome': 'telaChave',
+  'verboso': verboso,
+  'objetos': [tvTutorial],
+  'somPainel': '',
+  'somIntro': 'PainelRelogioDescricao',
+  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'urlImagem': 'assets/imgs/keyTutorial.jpg',
+});
+let painel3Tutorial = new Painel({
+  'nome': 'telaWindow',
+  'verboso': verboso,
+  'objetos': [tvTutorial],
+  'somPainel': '',
+  'somIntro': 'PainelRelogioDescricao',
+  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'urlImagem': 'assets/imgs/windowTutorial.jpg',
+});
+let painel4Tutorial = new Painel({
+  'nome': 'telaPorta',
+  'verboso': verboso,
+  'objetos': [tvTutorial],
+  'somPainel': '',
+  'somIntro': 'PainelRelogioDescricao',
+  'sonsInfo': ['PainelRelogioDescricaoCurta_1', 'PainelRelogioDescricaoCurta_2'],
+  'urlImagem': 'assets/imgs/doorTutorial.jpg',
+});
+let somPrologo = new Som('tutorialEpilogo');
+  
+  let faseTutorial = new Fase(
+    'Tutorial',
+    [painel1Tutorial,painel2Tutorial, painel3Tutorial,painel4Tutorial],
+    new Som('tema_main'),
+    new Som('tema_birthday'),
+    new Inventario(['naoMachucado', 'telefoneNaoTocando']),
+    false,
+    () => {
+      fases.Tutorial.audioIntro.ajustarVolume(0.5);
+      fases.Tutorial.audioIntro.tocar();
+      somPrologo.tocar();
+      setTimeout(function(){
+        fases.Tutorial.audioIntro.parar();
+        vCenario = new VisaoCenario(fases.Tutorial.paineis, fases.Tutorial.tema);
+        inventario = fases.Tutorial.inventario;
+      }, 40000);
+    },
+  );
 
+  return faseTutorial;
+}
 function criarFase1(){
   // em cada um dos objetos, após criar, precisa incluir os sons a serem executados
   // quando o objeto entra em foco e os comportamentos especiais dos que tiverem. Usa-se o método
@@ -855,7 +931,10 @@ function criarFase1(){
 
 function criarFases() {
   let fase1 = criarFase1();
+  let faseTutorial = criarFaseTutorial();
   fases['fase1'] = fase1;
+  fases['Tutorial'] = faseTutorial;
+  
 }
 
 let verboso=true;
@@ -866,7 +945,7 @@ let vCenario;
 let controle;
 let inventario;
 let fases = {};
-let faseAtual = 'fase1'
+let faseAtual = 'Tutorial'
 
 let imgBotoes;
 
