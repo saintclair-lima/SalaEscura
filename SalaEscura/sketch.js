@@ -89,7 +89,7 @@ class Som {
       'PainelTvDescricaoCurta_2': 'assets/audio/tutorial/PainelTvDescricaoCurta_2.mp3',
       'ObjetoChaveDescricao': 'assets/audio/tutorial/ObjetoChaveDescricao.mp3',
       'ObjetoChaveDescricaoCurta_1': 'assets/audio/tutorial/ObjetoChaveDescricaoCurta_1.mp3',
-      'ObjetoChaveDescricaoCurta_2': 'assets/audio/tutorial/ObjetoChaveDescricao2.mp3',
+      'ObjetoChaveDescricaoCurta_2': 'assets/audio/tutorial/ObjetoChaveDescricaoCurta_2.mp3',
       'ObjetoJanelaDescricao': 'assets/audio/tutorial/ObjetoJanelaDescricao.mp3',
       'ObjetoJanelaDescricaoCurta_1': 'assets/audio/tutorial/ObjetoJanelaDescricaoCurta_1.mp3',
       'ObjetoJanelaDescricaoCurta_2': 'assets/audio/tutorial/ObjetoJanelaDescricaoCurta_2.mp3',
@@ -99,6 +99,7 @@ class Som {
       'ObjetoTvDescricao': 'assets/audio/tutorial/ObjetoTvDescricao.mp3',
       'ObjetoTvDescricaoCurta_1': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_1.mp3',
       'ObjetoTvDescricaoCurta_2': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_2.mp3',
+      'TutorialPrologo' : 'assets/audio/tutorial/Prologo.mp3',
 
     }
 
@@ -591,10 +592,10 @@ class Inventario {
 }
 function criarFaseTutorial(){
   // ITENS DA FASE TUTORIAL
-  let somIntroTv= new Som('ObjetoRelogioComodaDescricao');
+  let somIntroTv= new Som('ObjetoTvDescricao');
   let sonsFocoTv = [
-    new Som('ObjetoRelogioComodaDescricaoCurta_1'),
-    new Som('ObjetoRelogioComodaDescricaoCurta_2'),
+    new Som('ObjetoTvDescricaoCurta_1'),
+    new Som('ObjetoTvDescricaoCurta_2'),
   ];
   let tvTutorial = new Objeto({
     'nome': 'tv',
@@ -606,36 +607,68 @@ function criarFaseTutorial(){
     'status':'',
     'comportamentosEspeciais': {},
   });
-  
+  let somIntroJanela= new Som('ObjetoJanelaDescricao');
+  let sonsFocoJanela = [
+    new Som('ObjetoJanelaDescricaoCurta_1'),
+    new Som('ObjetoJanelaDescricaoCurta_2'),
+  ];
   let janelaTutorial = new Objeto({
     'nome': 'janelaTutorial',
     'verboso': verboso,
     'somCustomizado': 'ventoJanela',
     'somContinuo': true,
-    'somIntro': somIntroTv,
-    'sonsFoco': sonsFocoTv,
+    'somIntro': somIntroJanela,
+    'sonsFoco': sonsFocoJanela,
     'status':'',
     'comportamentosEspeciais': {},
   });
+
+  let somIntroPorta= new Som('PainelPortaDescricao');
+  let sonsFocoPorta = [
+    new Som('PainelPortaDescricaoCurta_1'),
+    new Som('PainelPortaDescricaoCurta_2'),
+  ];
+  let somTutorialPrologo = new Som('TutorialPrologo')
   let portaTutorial = new Objeto({
     'nome': 'portaTutorial',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': true,
-    'somIntro': somIntroTv,
-    'sonsFoco': sonsFocoTv,
-    'status':'',
-    'comportamentosEspeciais': {},
+    'somIntro': somIntroPorta,
+    'sonsFoco': sonsFocoPorta,
+    'status':'fechada',
+    'comportamentosEspeciais': {
+      'chavePorta': ()=>{
+        if (this.verboso) console.log('porta: usou a chave para abrir, encerrar fase.');
+        portaTutorial.status = 'aberta';
+        fases['Tutorial']['concluida'] = true;
+        vCenario.pararAudio();
+        somTutorialPrologo.tocar();
+        return true;
+      }
+    },
   });
+  let somIntroChave= new Som('ObjetoChaveDescricao');
+  let sonsFocoChave = [
+    new Som('ObjetoChaveDescricaoCurta_1'),
+    new Som('ObjetoChaveDescricaoCurta_2'),
+  ];
   let chaveTutorial = new Objeto({
     'nome': 'chaveTutorial',
     'verboso': verboso,
     'somCustomizado': '',
     'somContinuo': true,
-    'somIntro': somIntroTv,
-    'sonsFoco': sonsFocoTv,
+    'somIntro': somIntroChave,
+    'sonsFoco': sonsFocoChave,
     'status':'',
-    'comportamentosEspeciais': {},
+    'comportamentosEspeciais': {
+      'encontrarChave': ()=>{
+        if (this.verboso) console.log('chave: encontrada uma chave.');
+        sonsFocoChave[1].tocar();
+        inventario.adicionarElemento('chavePorta');
+        return true
+      },
+    },
   });
   // PAINÉIS DA FASE TUTORIAL
   let painel1Tutorial = new Painel({
@@ -650,7 +683,7 @@ function criarFaseTutorial(){
   let painel2Tutorial = new Painel({
     'nome': 'telaChave',
     'verboso': verboso,
-    'objetos': [tvTutorial],
+    'objetos': [chaveTutorial],
     'somPainel': '',
     'somIntro': 'PainelChaveDescricao',
     'sonsInfo': ['PainelChaveDescricaoCurta_1', 'PainelChaveDescricaoCurta_2'],
@@ -691,6 +724,9 @@ function criarFaseTutorial(){
           fases.Tutorial.audioIntro.parar();
           vCenario = new VisaoCenario(fases.Tutorial.paineis, fases.Tutorial.tema);
           inventario = fases.Tutorial.inventario;
+          inventario.adicionarElemento('encontrarChave')
+
+          
         }, 40000);
       },
     );
