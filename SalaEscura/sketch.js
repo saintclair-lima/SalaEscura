@@ -15,8 +15,11 @@ class Som {
       'cooler':'assets/audio/cooler.mp3',
       'curto_circuito':'assets/audio/arc2.mp3',
       'gato': 'assets/audio/cat.mp3',
+      'gramofone': 'assets/audio/gramofone.mp3',
       'lampada': 'assets/audio/lamp_flicker.mp3',
+      'lareira': 'assets/audio/fireplace.mp3',
       'pia':'assets/audio/sink.mp3',
+      'porta_abrindo': 'assets/audio/porta_abrindo.mp3',
       'radio':'assets/audio/radio_static.mp3',
       'relogio':'assets/audio/clock.mp3',
       'sintonizar_radio':'assets/audio/tuning_radio.mp3',
@@ -26,7 +29,6 @@ class Som {
       'torneira_fluxo':'assets/audio/faucet_flow.mp3',
       'torneira_pingo':'assets/audio/faucet_drip.mp3',
       'tv':'assets/audio/tv.mp3',
-      'ventoJanela': 'assets/audio/ventoJanela.mp3',
       
       'Epilogo': './assets/audio/Fase1/Epilogo.mp3',
       'ObjetoBrasaoDescricaoCurta_1': './assets/audio/Fase1/ObjetoBrasaoDescricaoCurta_1.mp3',
@@ -70,6 +72,7 @@ class Som {
       'Prologo': './assets/audio/Fase1/Prologo.mp3',
       'SalaDescricaoCurta': './assets/audio/Fase1/SalaDescricaoCurta.mp3',
       'SalaDescricao': './assets/audio/Fase1/SalaDescricao.mp3',
+      'TelaAbertura': './assets/audio/_TelaAbertura/TelaDeAbertura.mp3',
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
       'tema_main': 'assets/audio/_theme/theme_main.mp3',
       'tema_telefone': 'assets/audio/_theme/theme_get_out_of_here.mp3',
@@ -100,14 +103,16 @@ class Som {
       'ObjetoTvDescricaoCurta_1': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_1.mp3',
       'ObjetoTvDescricaoCurta_2': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_2.mp3',
       'TutorialPrologo' : 'assets/audio/tutorial/Prologo.mp3',
-
-    }
-
+    }   
+    
     if (urlAvulsa) this.arqSom = loadSound(tipo);
     else if (this.sonsDic[tipo] == undefined) this.arqSom = loadSound(this.sonsDic['silencio']);
     else this.arqSom = loadSound(this.sonsDic[tipo]);  
   }
   
+  duracao(){
+    return this.arqSom.duration() * 1000;
+  }
   tocar(){
     this.arqSom.play();
   }
@@ -398,7 +403,7 @@ class Painel {
 
 class VisaoCenario {
   // Simula a visão o jogador: a câmera, por assim dizer.
-  constructor(paineis, tema){
+  constructor(paineis, tema, configs){
     this.verboso = true;
     this.paineis = paineis;
     // música de fundo. Precisa dosar para não cobrir os outros sons.
@@ -408,6 +413,11 @@ class VisaoCenario {
     this.ajustarPaineis();
     this.audioIniciado = false;
     this.mostrandoInfo = false;
+
+    if (configs){
+      this.somIntro = configs['somIntro'];
+      this.sonsInfo = configs['sonsInfo'];
+    }
   }
   
   // ajusta os sons e as direções, emulando uma virada que o jogador dá
@@ -453,6 +463,7 @@ class VisaoCenario {
 
   pararAudio(){
     for (let painel of this.paineis) painel.pararSons();
+    this.tema.parar();
   }
   
   virarDireita(){
@@ -476,6 +487,9 @@ class VisaoCenario {
   }
   
   sairPainelEmFoco(){
+    if(this.paineis[this.painelFoco].sonsInfo.length > 0) {
+      this.paineis[this.painelFoco].sonsInfo[Math.floor(Math.random() * this.paineis[this.painelFoco].sonsInfo.length)].tocar();
+    }
     this.paineis[this.painelFoco].sairDeFoco();
     this.mostrandoInfo = false;
     this.ajustarPaineis();
@@ -491,7 +505,7 @@ class VisaoCenario {
 }
 
 class Fase {
-  constructor (nome, paineis, audioIntro, audioTema, inventario, concluida, funcaoExecutarAoIniciar){
+  constructor (nome, paineis, audioIntro, audioTema, inventario, concluida, funcaoExecutarAoIniciar, funcaoExecutarAoEncerrar){
     this.nome = nome;
     this.paineis = paineis;
     this.audioIntro = audioIntro;
@@ -499,6 +513,7 @@ class Fase {
     this.inventario = inventario;
     this.concluida = concluida;
     this.executarAoIniciar = funcaoExecutarAoIniciar;
+    this.executarAoEncerrar = funcaoExecutarAoEncerrar;
   }
 }
 
@@ -590,6 +605,144 @@ class Inventario {
     return this.elementosDisponiveis;
   }
 }
+
+function criarTelaAbertura(){
+  // CRIA O AMBIENTE DA TELA DE ABERTURA
+  let silencio = new Som('silencio');
+
+  let gramofone = new Objeto({
+    'nome': 'gramofone',
+    'verboso': verboso,
+    'somCustomizado': '',
+    'somContinuo': true,
+    'somIntro': silencio,
+    'sonsFoco': [],
+    'status':'',
+    'comportamentosEspeciais': {},
+  });
+  
+  let lareira = new Objeto({
+    'nome': 'lareira',
+    'verboso': verboso,
+    'somCustomizado': '',
+    'somContinuo': true,
+    'somIntro': silencio,
+    'sonsFoco': [],
+    'status':'',
+    'comportamentosEspeciais': {},
+  });
+  
+  let painelGramofone = new Painel({
+    'nome': 'painelGramofone',
+    'verboso': verboso,
+    'objetos': [gramofone],
+    'somPainel': '',
+    'somIntro': '',
+    'sonsInfo': [''],
+    'urlImagem': 'assets/imgs/TelaAbertura/painelGramofone.jpg',
+  });
+  
+  let painelFrente = new Painel({
+    'nome': 'painelVazio',
+    'verboso': verboso,
+    'objetos': [],
+    'somPainel': '',
+    'somIntro': '',
+    'sonsInfo': [''],
+    'urlImagem': 'assets/imgs/TelaAbertura/painelFrente.jpg',
+  });
+  
+  let painelCostas = new Painel({
+    'nome': 'painelVazio',
+    'verboso': verboso,
+    'objetos': [],
+    'somPainel': '',
+    'somIntro': '',
+    'sonsInfo': [''],
+    'urlImagem': 'assets/imgs/TelaAbertura/painelCostas.jpg',
+  });
+  
+  let painelLareira = new Painel({
+    'nome': 'painelLareira',
+    'verboso': verboso,
+    'objetos': [lareira],
+    'somPainel': '',
+    'somIntro': '',
+    'sonsInfo': [''],
+    'urlImagem': 'assets/imgs/TelaAbertura/painelLareira.jpg',
+  });
+
+
+  let somPortaAbrindo = new Som('porta_abrindo');
+  let comandosControle = {
+    'navegarPaineis': (opcao) => {
+      switch (opcao) {
+        case 'direita':
+          // dar foco ao painel à direita
+          vCenario.virarDireita();
+          break;
+        case 'esquerda':
+          // dar foco ao painel à esquerda
+          vCenario.virarEsquerda();
+          break;
+        case 'examinar':
+          // examinar painel em foco
+          // alterar próximo comando do controle para navegar objetos do painel
+
+          let painelEmFoco = vCenario.getPainelFoco().nome;
+          if (painelEmFoco == 'painelLareira' || painelEmFoco == 'painelGramofone'){
+            vCenario.entrarPainelEmFoco();
+            setTimeout(function(){
+              somPortaAbrindo.tocar();
+              setTimeout(function(){
+                vCenario.pararAudio();
+                for (let painel of vCenario.paineis){
+                  painel.imagem = imgInterludio;
+                }
+                controle.definirConjuntoDeComandos({'navegarPaineis': (opcao) => {}, 'navegarObjetos': (opcao) => {}});
+                faseAtual = 'Tutorial';
+                setup();
+              }, 4000);
+            }, 2000);
+          }
+          break;
+        case 'sair':
+          // definir o que fazer
+          break;
+      }
+    },
+    'navegarObjetos': ()=>{}
+  };
+
+  let telaAbertura = new Fase(
+    'telaAbertura',
+    [painelFrente, painelLareira, painelCostas, painelGramofone],
+    // Áudio intro
+    new Som('TelaAbertura'),
+    // Áudio tema
+    new Som(''),
+    // inventário vazio
+    new Inventario([]),
+    // concluída
+    false,
+    // funcaoExecutarAoIniciar
+    () => {
+      fases.telaAbertura.audioIntro.ajustarVolume(1);
+      fases.telaAbertura.audioIntro.tocar();
+      setTimeout(function(){
+        vCenario = new VisaoCenario(fases.telaAbertura.paineis, fases.telaAbertura.tema);
+        controle = new Controle(comandosControle);
+        inventario = fases.telaAbertura.inventario;
+        fases.telaAbertura.audioIntro.parar();
+      },fases.telaAbertura.audioIntro.duracao());
+    },    
+    // funcaoExecutarAoEncerrar 
+    () => {}
+  );
+
+  return telaAbertura;
+}
+
 function criarFaseTutorial(){
   // ITENS DA FASE TUTORIAL
   let somIntroTv= new Som('ObjetoTvDescricao');
@@ -644,6 +797,15 @@ function criarFaseTutorial(){
         fases['Tutorial']['concluida'] = true;
         vCenario.pararAudio();
         somTutorialPrologo.tocar();
+        setTimeout(function(){
+          vCenario.pararAudio();
+          for (let painel of vCenario.paineis){
+            painel.imagem = imgInterludio;
+          }
+          controle.definirConjuntoDeComandos({'navegarPaineis': (opcao) => {}, 'navegarObjetos': (opcao) => {}});
+          faseAtual = 'fase1';
+          setup();
+        }, somTutorialPrologo.duracao() + 4000);
         return true;
       }
     },
@@ -725,14 +887,12 @@ function criarFaseTutorial(){
           vCenario = new VisaoCenario(fases.Tutorial.paineis, fases.Tutorial.tema);
           inventario = fases.Tutorial.inventario;
           inventario.adicionarElemento('encontrarChave')
-
-          
         }, 40000);
       },
     );
-  
     return faseTutorial;
-  }
+}
+
 function criarFase1(){
   // em cada um dos objetos, após criar, precisa incluir os sons a serem executados
   // quando o objeto entra em foco e os comportamentos especiais dos que tiverem. Usa-se o método
@@ -773,6 +933,7 @@ function criarFase1(){
     'status':'fechada',
     'comportamentosEspeciais': {
       'telefoneNaoTocando': ()=>{
+        porta.tocarSomFoco();
         if (quadro.foiVisitado){
           if (this.verboso) console.log('porta: percebeu que a porta está fechada. Telefone vai tocar após o tempo do audio de intro...');
           telefone.alterarSom(somTelefoneTocando);
@@ -788,8 +949,6 @@ function criarFase1(){
           }, 60000);
           return true;
         }
-        porta.tocarSomFoco();
-        console.log(quadro.foiVisitado);
         return false;
       },
       'chavePorta': ()=>{
@@ -797,6 +956,11 @@ function criarFase1(){
         porta.status = 'aberta';
         fases['fase1']['concluida'] = true;
         vCenario.pararAudio();
+        vCenario.tema.parar();
+        for (let painel of vCenario.paineis){
+          painel.imagem = imgEncerramento;
+        }
+        controle.definirConjuntoDeComandos({'navegarPaineis': (opcao) => {}, 'navegarObjetos': (opcao) => {}});
         somEpilogo.tocar();
         return true;
       }
@@ -840,8 +1004,9 @@ function criarFase1(){
         return true
       },
       'telefoneNaoTocando': ()=>{
+        quadro.tocarSomFoco();
         if (porta.foiVisitado){
-          if (this.verboso) console.log('porta: percebeu que a porta está fechada. Telefone vai tocar após o tempo do audio de intro...');
+          if (this.verboso) console.log('quadro: Telefone vai tocar após o tempo do audio de intro...');
           telefone.alterarSom(somTelefoneTocando);
           telefone.posicionarEsquerda();
           setTimeout(function() {
@@ -855,8 +1020,6 @@ function criarFase1(){
           }, 40000);
           return true;
         }
-        quadro.tocarSomFoco();
-        console.log(porta.foiVisitado);
         return false;
       } 
     }
@@ -1008,6 +1171,7 @@ function criarFase1(){
     new Som('tema_birthday'),
     new Inventario(['naoMachucado', 'telefoneNaoTocando']),
     false,
+    // funcaoExecutarAoIniciar
     () => {
       fases.fase1.audioIntro.ajustarVolume(0.5);
       fases.fase1.audioIntro.tocar();
@@ -1015,21 +1179,27 @@ function criarFase1(){
       setTimeout(function(){
         fases.fase1.audioIntro.parar();
         somIntroSala.tocar();
-        vCenario = new VisaoCenario(fases.fase1.paineis, fases.fase1.tema);
+        let configs = {'sonsInfo':[new Som('SalaDescricaoCurta')]}
+        vCenario = new VisaoCenario(fases.fase1.paineis, fases.fase1.tema, configs);
         inventario = fases.fase1.inventario;
-      }, 54000);
-    },
+      }, 54000); // ou somPrologo.duration()
+    },    
+    // funcaoExecutarAoEncerrar 
+    () => {}
   );
 
   return fase1;
 }
 
 function criarFases() {
-  let fase1 = criarFase1();
+  let telaAbertura = criarTelaAbertura();
+  fases['telaAbertura'] = telaAbertura;
+
   let faseTutorial = criarFaseTutorial();
-  fases['fase1'] = fase1;
   fases['Tutorial'] = faseTutorial;
-  
+
+  let fase1 = criarFase1();
+  fases['fase1'] = fase1;
 }
 
 let verboso=true;
@@ -1040,18 +1210,22 @@ let vCenario;
 let controle;
 let inventario;
 let fases = {};
-let faseAtual = 'Tutorial'
+let faseAtual = 'telaAbertura'
 
 let imgBotoes;
+let imgInterludio;
+let imgEncerramento
 
 function preload() {
   imgBotoes = loadImage('./assets/imgs/botoes.jpg');
+  imgInterludio = loadImage('./assets/imgs/carregando.jpg');
+  imgEncerramento = loadImage('./assets/imgs/paisagem_noir.jpeg');
   criarFases();
 }
 
 function setup(){
+  controle = new Controle();
   fases[faseAtual].executarAoIniciar();
-  controle = new Controle();  
 }
 
 function carregarVisaoCenario(){
@@ -1130,7 +1304,7 @@ function keyPressed() {
   // comandos abaixo usados para debugar
   if (keyCode == 80) {
     // quando pression "P"
-    
+    console.log(controle)
   }
   
   if (keyCode == 76) {
