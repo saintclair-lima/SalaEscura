@@ -43,9 +43,9 @@ class Som {
       'ObjetoPoltronaDescricaoCurta_1': './assets/audio/Fase1/ObjetoPoltronaDescricaoCurta_1.mp3',
       'ObjetoPoltronaDescricaoCurta_2': './assets/audio/Fase1/ObjetoPoltronaDescricaoCurta_2.mp3',
       'ObjetoPoltronaDescricao': './assets/audio/Fase1/ObjetoPoltronaDescricao.mp3',
-      'ObjetoPortaDescricaoCurta_1': './assets/audio/Fase1/ObjetoPortaDescricaoCurta_1.mp3',
-      'ObjetoPortaDescricaoCurta_2': './assets/audio/Fase1/ObjetoPortaDescricaoCurta_2.mp3',
-      'ObjetoPortaDescricao': './assets/audio/Fase1/ObjetoPortaDescricao.mp3',
+      'ObjetoPortaDescricaoCurtaFase1_1': './assets/audio/Fase1/ObjetoPortaDescricaoCurta_1.mp3',
+      'ObjetoPortaDescricaoCurtaFase1_2': './assets/audio/Fase1/ObjetoPortaDescricaoCurta_2.mp3',
+      'ObjetoPortaDescricaoFase1': './assets/audio/Fase1/ObjetoPortaDescricao.mp3',
       'ObjetoQuadroComDica': './assets/audio/Fase1/ObjetoQuadroComDica.mp3',
       'ObjetoQuadroDescricaoCurta_1': './assets/audio/Fase1/ObjetoQuadroDescricaoCurta_1.mp3',
       'ObjetoQuadroDescricaoCurta_2': './assets/audio/Fase1/ObjetoQuadroDescricaoCurta_2.mp3',
@@ -70,7 +70,9 @@ class Som {
       'PainelTelefoneDescricaoCurta_2': './assets/audio/Fase1/PainelTelefoneDescricaoCurta_2.mp3',
       'PainelTelefoneDescricao': './assets/audio/Fase1/PainelTelefoneDescricao.mp3',
       'Prologo': './assets/audio/Fase1/Prologo.mp3',
-      'SalaDescricaoCurta': './assets/audio/Fase1/SalaDescricaoCurta.mp3',
+      'SalaDescricaoCurta_1': './assets/audio/Fase1/SalaDescricaoCurta_1.mp3',
+      'SalaDescricaoCurta_2': './assets/audio/Fase1/SalaDescricaoCurta_2.mp3',
+      'SalaDescricaoCurta_3': './assets/audio/Fase1/SalaDescricaoCurta_3.mp3',
       'SalaDescricao': './assets/audio/Fase1/SalaDescricao.mp3',
       'TelaAbertura': './assets/audio/_TelaAbertura/TelaDeAbertura.mp3',
       'tema_birthday': 'assets/audio/_theme/theme_birthday.mp3',
@@ -96,9 +98,9 @@ class Som {
       'ObjetoJanelaDescricao': 'assets/audio/tutorial/ObjetoJanelaDescricao.mp3',
       'ObjetoJanelaDescricaoCurta_1': 'assets/audio/tutorial/ObjetoJanelaDescricaoCurta_1.mp3',
       'ObjetoJanelaDescricaoCurta_2': 'assets/audio/tutorial/ObjetoJanelaDescricaoCurta_2.mp3',
-      'ObjetoPortaDescricao': 'assets/audio/tutorial/ObjetoPortaDescricao.mp3',
-      'ObjetoPortaDescricaoCurta_1': 'assets/audio/tutorial/ObjetoPortaDescricaoCurta_1.mp3',
-      'ObjetoPortaDescricaoCurta_2': 'assets/audio/tutorial/ObjetoPortaDescricaoCurta_2.mp3',
+      'ObjetoPortaDescricaoTutorial': 'assets/audio/tutorial/ObjetoPortaDescricao.mp3',
+      'ObjetoPortaDescricaoCurtaTutorial_1': 'assets/audio/tutorial/ObjetoPortaDescricaoCurta_1.mp3',
+      'ObjetoPortaDescricaoCurtaTutorial_2': 'assets/audio/tutorial/ObjetoPortaDescricaoCurta_2.mp3',
       'ObjetoTvDescricao': 'assets/audio/tutorial/ObjetoTvDescricao.mp3',
       'ObjetoTvDescricaoCurta_1': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_1.mp3',
       'ObjetoTvDescricaoCurta_2': 'assets/audio/tutorial/ObjetoTvDescricaoCurta_2.mp3',
@@ -115,6 +117,10 @@ class Som {
   }
   tocar(){
     this.arqSom.play();
+  }
+  
+  aoEncerrar(funcaoParaExecutarAoEncerrar){
+    this.arqSom.onended(funcaoParaExecutarAoEncerrar);
   }
   
   tocarEmLoop(){    
@@ -154,6 +160,9 @@ class Som {
   atras(){
     this.arqSom.pan(0);
     this.arqSom.setVolume(0.05);
+  }
+  estaTocando(){
+    return this.arqSom.isPlaying();
   }
 }
 
@@ -413,9 +422,10 @@ class VisaoCenario {
     this.ajustarPaineis();
     this.audioIniciado = false;
     this.mostrandoInfo = false;
-
+    
+    this.idxSomInfoTocando = -1;
+    this.sonsInfo = [];
     if (configs){
-      this.somIntro = configs['somIntro'];
       this.sonsInfo = configs['sonsInfo'];
     }
   }
@@ -481,14 +491,22 @@ class VisaoCenario {
   }
   
   entrarPainelEmFoco(){
+    if (this.idxSomInfoTocando != -1){
+      if (this.sonsInfo[this.idxSomInfoTocando].estaTocando()){
+        this.sonsInfo[this.idxSomInfoTocando].parar();
+        this.idxSomInfoTocando = -1;
+      }
+    }
     for (let painel of this.paineis) painel.posicionarAtras();
     this.paineis[this.painelFoco].entrarEmFoco();
     this.mostrandoInfo = true;
   }
   
   sairPainelEmFoco(){
-    if(this.paineis[this.painelFoco].sonsInfo.length > 0) {
-      this.paineis[this.painelFoco].sonsInfo[Math.floor(Math.random() * this.paineis[this.painelFoco].sonsInfo.length)].tocar();
+    if(this.sonsInfo.length > 0){
+      this.idxSomInfoTocando = Math.floor(Math.random() * this.sonsInfo.length);
+      this.sonsInfo[this.idxSomInfoTocando].tocar();
+      this.sonsInfo[this.idxSomInfoTocando].aoEncerrar(()=>{this.idxSomInfoTocando = -1});   
     }
     this.paineis[this.painelFoco].sairDeFoco();
     this.mostrandoInfo = false;
@@ -519,49 +537,69 @@ class Fase {
 
 class Controle {
   constructor(comandos){
-    if (comandos){
-      this.comandos = comandos;
-    } else {
-      this.comandos = {
-        'navegarPaineis': (opcao) => {
-          switch (opcao) {
-            case 'direita':
-              // dar foco ao painel à direita
-              vCenario.virarDireita();
+    this.comandosPadrao = {
+      'navegarPaineis': (opcao) => {
+        switch (opcao) {
+          case 'direita':
+            // dar foco ao painel à direita
+            vCenario.virarDireita();
+            break;
+          case 'esquerda':
+            // dar foco ao painel à esquerda
+            vCenario.virarEsquerda();
+            break;
+          case 'examinar':
+            // examinar painel em foco
+            // alterar próximo comando do controle para navegar objetos do painel
+            controle.selecionarComando('navegarObjetos');
+            vCenario.entrarPainelEmFoco();
+            break;
+          case 'sair':
+            // definir o que fazer
+            break;
+        }
+      },
+      'navegarObjetos': (opcao) => {
+        if (opcao == 'voltar'){
+          // voltar para navegação entre paineis
+          if (this.verboso) console.log('Escolheu voltar para navegação entre paineis')
+          controle.selecionarComando('navegarPaineis');
+          vCenario.sairPainelEmFoco();
+        } else {
+          for (let nomeObjeto of vCenario.getPainelFoco().getListaNomesObjetos()){
+            if (opcao == nomeObjeto){
+              vCenario.getPainelFoco().moverFocoParaObjeto(nomeObjeto);
               break;
-            case 'esquerda':
-              // dar foco ao painel à esquerda
-              vCenario.virarEsquerda();
-              break;
-            case 'examinar':
-              // examinar painel em foco
-              // alterar próximo comando do controle para navegar objetos do painel
-              controle.selecionarComando('navegarObjetos');
-              vCenario.entrarPainelEmFoco();
-              break;
-            case 'sair':
-              // definir o que fazer
-              break;
+            }          
           }
-        },
-        'navegarObjetos': (opcao) => {
-          if (opcao == 'voltar'){
-            // voltar para navegação entre paineis
-            if (this.verboso) console.log('Escolheu voltar para navegação entre paineis')
-            controle.selecionarComando('navegarPaineis');
-            vCenario.sairPainelEmFoco();
-          } else {
-            for (let nomeObjeto of vCenario.getPainelFoco().getListaNomesObjetos()){
-              if (opcao == nomeObjeto){
-                vCenario.getPainelFoco().moverFocoParaObjeto(nomeObjeto);
-                break;
-              }          
-            }
-          }   
-        },
-      }
+        }   
+      },
+    };
+    
+    this.comandosVazios = {'navegarObjetos': (opcao) => {}, 'navegarPaineis': (opcao) => {}}      
+      
+    if (comandos){
+      this.comandosInicializacao = comandos;
+    } else {
+      this.usarComandosPadrao();
     }
     this.comandoSelecionado = 'navegarPaineis';
+  }
+  
+  usarComandosInicializacao(){
+    this.comandos = this.comandosInicializacao;
+  }
+  
+  usarComandosPadrao(){
+    this.comandos = this.comandosPadrao;
+  }
+  
+  usarComandosVazios(){
+    this.comandos = this.comandosVazios;
+  }
+  
+  desabilitar(){
+    this.usarComandosVazios();
   }
   
   executarComando(nomeComando, parametros) {
@@ -873,7 +911,7 @@ function criarFaseTutorial(){
     
     let faseTutorial = new Fase(
       'Tutorial',
-      [painel1Tutorial,painel2Tutorial, painel3Tutorial,painel4Tutorial],
+      [painel4Tutorial, painel1Tutorial, painel3Tutorial, painel2Tutorial],
       new Som('tema_main'),
       new Som('tema_birthday'),
       new Inventario(['naoMachucado', 'telefoneNaoTocando']),
@@ -884,6 +922,7 @@ function criarFaseTutorial(){
         somPrologo.tocar();
         setTimeout(function(){
           fases.Tutorial.audioIntro.parar();
+          controle = new Controle();
           vCenario = new VisaoCenario(fases.Tutorial.paineis, fases.Tutorial.tema);
           inventario = fases.Tutorial.inventario;
           inventario.adicionarElemento('encontrarChave')
@@ -918,10 +957,10 @@ function criarFase1(){
   });
   let somTemaTelefone = new Som('tema_telefone');
   let somEpilogo = new Som('Epilogo');
-  let somIntroPorta = new Som('ObjetoPortaDescricao');
+  let somIntroPorta = new Som('ObjetoPortaDescricaoFase1');
   let sonsFocoPorta = [
-    new Som('ObjetoPortaDescricaoCurta_1'),
-    new Som('ObjetoPortaDescricaoCurta_2'),
+    new Som('ObjetoPortaDescricaoCurtaFase1_1'),
+    new Som('ObjetoPortaDescricaoCurtaFase1_2'),
   ];
   let porta = new Objeto({
     'nome': 'porta',
@@ -998,9 +1037,13 @@ function criarFase1(){
     'status':'',
     'comportamentosEspeciais': {
       'dicaQuadro': ()=>{
-        if (this.verboso) console.log('quadro: encontrada uma chave.');
         somChaveNoQuadro.tocar();
-        inventario.adicionarElemento('chavePorta');
+        controle.desabilitar();
+        setTimeout(function(){
+          if (this.verboso) console.log('quadro: encontrada uma chave.');
+          inventario.adicionarElemento('chavePorta');
+          controle.usarComandosPadrao();
+        },somChaveNoQuadro.duracao());
         return true
       },
       'telefoneNaoTocando': ()=>{
@@ -1095,6 +1138,7 @@ function criarFase1(){
       telefone.pararSom();
       telefone.alterarSom(dialogoTelefone);
       telefone.definirSomContinuo(false);
+      controle.desabilitar();
       telefone.tocarSom();
       setTimeout(function (){
         vCenario.tema.ajustarVolume(0, 4);
@@ -1104,7 +1148,8 @@ function criarFase1(){
           vCenario.tema.ajustarVolume(0.2);
           vCenario.tema.tocar();
           inventario.adicionarElemento('dicaQuadro');
-        }, 4000);
+          controle.usarComandosPadrao();
+        }, 1000);
       }, 67000);
       return true;
     }}
@@ -1164,6 +1209,11 @@ function criarFase1(){
   
   let somPrologo = new Som('Prologo');
   let somIntroSala = new Som('SalaDescricao');
+  let sonsInfoSala = [
+    new Som('SalaDescricaoCurta_1'),
+    new Som('SalaDescricaoCurta_2'),
+    new Som('SalaDescricaoCurta_2')
+  ];
   let fase1 = new Fase(
     'fase1',
     [painel1, painel2, painel3, painel4],
@@ -1179,10 +1229,15 @@ function criarFase1(){
       setTimeout(function(){
         fases.fase1.audioIntro.parar();
         somIntroSala.tocar();
-        let configs = {'sonsInfo':[new Som('SalaDescricaoCurta')]}
+        setTimeout(function(){
+          controle = new Controle();
+        }, somPrologo.duracao());
+        let configs = {
+          'sonsInfo': sonsInfoSala
+        }
         vCenario = new VisaoCenario(fases.fase1.paineis, fases.fase1.tema, configs);
         inventario = fases.fase1.inventario;
-      }, 54000); // ou somPrologo.duration()
+      }, somPrologo.duracao());
     },    
     // funcaoExecutarAoEncerrar 
     () => {}
@@ -1219,12 +1274,13 @@ let imgEncerramento
 function preload() {
   imgBotoes = loadImage('./assets/imgs/botoes.jpg');
   imgInterludio = loadImage('./assets/imgs/carregando.jpg');
-  imgEncerramento = loadImage('./assets/imgs/paisagem_noir.jpeg');
+  imgEncerramento = loadImage('./assets/imgs/cassete_player.jpeg');
   criarFases();
 }
 
 function setup(){
   controle = new Controle();
+  controle.desabilitar();
   fases[faseAtual].executarAoIniciar();
 }
 
@@ -1297,7 +1353,7 @@ function keyCodeParaObjeto(codigo, painel){
 
 function keyPressed() {
   let comando = keyCodeParaComando(keyCode)
-  if (comando != undefined) {
+  if (comando != undefined && controle != null) {
     controle.executarComandoSelecionado(comando);
   }
   
