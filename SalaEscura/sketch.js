@@ -985,6 +985,7 @@ function criarFase1(){
       'chavePorta': ()=>{
         if (this.verboso) console.log('porta: usou a chave para abrir. Tocar epílogo de sucesso e encerrar fase.');
         porta.status = 'aberta';
+        controle.desabilitar();
         fases['fase1']['concluida'] = true;
         vCenario.pararAudio();
         vCenario.tema.parar();
